@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><title>Lettuce</title></head>
+<body>
+  <h1>Lettuce Desktop</h1>
+  <div>
+    <input type="text" class="search-input" placeholder="Search..." />
+    <button class="btn-primary">Search</button>
+  </div>
+  <pre id="output">Loading...</pre>
+  <script>
+    const searchButton = document.querySelector('.btn-primary');
+    const searchInput = document.querySelector('.search-input');
+
+    searchButton.addEventListener('click', async () => {
+      const term = searchInput.value.trim();
+      if (!term) return;
+      const results = await window.lettuceAPI.searchText(term);
+      console.log('Raw API response:', results);
+    });
+
+  window.lettuceAPI.searchText('acetaminophen')
+    .then((data) => {
+      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    })
+    .catch((err) => {
+      document.getElementById('output').textContent = 'ERROR: ' + err.message;
+    });
+</script>
+</body>
+</html>
