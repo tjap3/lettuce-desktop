@@ -241,17 +241,25 @@
         <div class="switch on"></div>
       </div>
 
-      <h3 style="margin-top:16px;">AI assistance</h3>
-
+      <h3 style="margin-top:16px;">LLM assistance</h3>
+      <div class="title-row">
+      <div class="subtitle">To use the LLM, you must either have installed one of the llama-cpp extras or have an Ollama server running, and to have enabled embeddings.</div>
+      </div>
       <div class="field" style="margin-top:14px;">
-        <label>AI model</label>
-        <select disabled style="opacity:.5;">
+        <label>LLM model</label>
+        <select>
           <option>gemma3n:e4b</option>
           <option>llama3.1:8b</option>
         </select>
       </div>
+      <div class="toggle-row">
+        <span>Enable LLM</span>
+        <div class="switch on"></div>
+      </div>
+
+      
       <div class="field">
-        <label>Server URL</label>
+        <label>Ollama URL</label>
         <input type="text" value="http://localhost:11434" disabled style="opacity:.5;">
       </div>
     </div>
@@ -316,7 +324,7 @@
     <div class="search-panel">
       <div class="search-row">
         <input class="search-input" type="text" placeholder="Search a term, or upload a source file above...">
-        <select class="pill-select"><option>Text search</option><option>Vector search</option><option>Hybrid</option></select>
+        <select class="pill-select"><option>Text search</option><option>Vector search</option></select>
         <button class="btn btn-primary">
           <svg class="icon" viewBox="0 0 24 24" style="stroke:white;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
           Search
@@ -352,13 +360,13 @@
         <tr>
           <td class="checkbox-col"><input type="checkbox" checked></td>
           <td class="term-cell">Memantine HCL</td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">Drug</span>
-            <select class="cell-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
+          <td>
+            
+            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
           </td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">RxNorm</span>
-            <select class="cell-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
+          <td>
+            
+            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
           <td><select class="mode-select"><option>Vector search</option><option>Text search</option></select></td>
           <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--green);"><path d="M20 6L9 17l-5-5"/></svg> Ready to review</span></td>
@@ -367,13 +375,13 @@
         <tr>
           <td class="checkbox-col"><input type="checkbox" checked></td>
           <td class="term-cell">Ppaliperidone (Inv)</td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">Drug</span>
-            <select class="cell-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
+          <td>
+            
+            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
           </td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">RxNorm</span>
-            <select class="cell-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
+          <td>
+            
+            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
           <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
           <td><span class="status-pill status-pending"><span class="spinner"></span> Searching&hellip;</span></td>
@@ -382,13 +390,13 @@
         <tr>
           <td class="checkbox-col"><input type="checkbox" checked></td>
           <td class="term-cell">Trazidine</td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">Drug</span>
-            <select class="cell-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
+          <td>
+            
+            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
           </td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">RxNorm</span>
-            <select class="cell-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
+          <td>
+            
+            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
           <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
           <td><span class="status-pill status-none">Not searched</span></td>
@@ -397,13 +405,13 @@
         <tr>
           <td class="checkbox-col"><input type="checkbox"></td>
           <td class="term-cell">Trazodone HCL</td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">Drug</span>
-            <select class="cell-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
+          <td>
+            
+            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
           </td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">RxNorm</span>
-            <select class="cell-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
+          <td>
+            
+            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
           <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
           <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--green);"><path d="M20 6L9 17l-5-5"/></svg> Ready to review</span></td>
@@ -412,13 +420,13 @@
         <tr>
           <td class="checkbox-col"><input type="checkbox"></td>
           <td class="term-cell">Amitriptyline HCL</td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">Drug</span>
-            <select class="cell-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
+          <td>
+        
+            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
           </td>
-          <td class="tag-cell" onclick="this.classList.add('editing')">
-            <span class="tag">RxNorm</span>
-            <select class="cell-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
+          <td>
+            
+            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
           <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
           <td><span class="status-pill status-none">Not searched</span></td>
