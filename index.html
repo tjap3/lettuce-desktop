@@ -241,17 +241,25 @@
         <div class="switch on"></div>
       </div>
 
-      <h3 style="margin-top:16px;">AI assistance</h3>
-
+      <h3 style="margin-top:16px;">LLM assistance</h3>
+      <div class="title-row">
+      <div class="subtitle">To use the LLM, you must either have installed one of the llama-cpp extras or have an Ollama server running, and to have enabled embeddings.</div>
+      </div>
       <div class="field" style="margin-top:14px;">
-        <label>AI model</label>
-        <select disabled style="opacity:.5;">
+        <label>LLM model</label>
+        <select>
           <option>gemma3n:e4b</option>
           <option>llama3.1:8b</option>
         </select>
       </div>
+      <div class="toggle-row">
+        <span>Enable LLM</span>
+        <div class="switch on"></div>
+      </div>
+
+      
       <div class="field">
-        <label>Server URL</label>
+        <label>Ollama URL</label>
         <input type="text" value="http://localhost:11434" disabled style="opacity:.5;">
       </div>
     </div>
