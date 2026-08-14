@@ -38,6 +38,33 @@
   .app{display:flex;min-height:100vh;}
   svg.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 
+  .table-wrap.expanded {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  background: white;
+  padding: 24px;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.table-wrap.expanded table {
+  width: 100%;
+}
+#exit-fullscreen-btn {
+  display: none;
+}
+
+.table-wrap.expanded #exit-fullscreen-btn {
+  display: inline-flex;
+  position: sticky;
+  top: 0;
+  margin-bottom: 12px;
+  z-index: 1001;
+}
   /* Sidebar */
   .sidebar{
     width:270px;
@@ -344,7 +371,8 @@
       </div>
     </div>
 
-    <div class="table-wrap">
+    <div class="table-wrap" id="table-wrap">
+      <button class="btn btn-secondary" id="exit-fullscreen-btn">✕ Exit fullscreen</button>
     <table>
       <thead>
         <tr>
@@ -441,6 +469,7 @@
       <span>39 rows &middot; 9 columns</span>
       <div class="pages">
         <button>&lsaquo; Page 1 of 4 &rsaquo;</button>
+        <button class="btn btn-secondary" id="expand-toggle">⛶ Expand</button>
       </div>
     </div>
 
@@ -475,7 +504,7 @@
   </main>
 </div>
 
-<<script>
+<script>
   // --- Real API wiring ---
   const searchButton = document.querySelector('.btn-primary');
   const searchInput = document.querySelector('.search-input');
@@ -590,6 +619,29 @@
   // Set correct initial state on page load (since some rows start checked)
   syncSelectAllState();
   updateBatchButton();
+  const expandToggle = document.getElementById('expand-toggle');
+const tableWrap = document.getElementById('table-wrap');
+
+expandToggle.addEventListener('click', () => {
+  tableWrap.classList.toggle('expanded');
+  expandToggle.textContent = tableWrap.classList.contains('expanded')
+    ? '⛶ Collapse'
+    : '⛶ Expand';
+});
+
+// Let Escape key exit expanded view too
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && tableWrap.classList.contains('expanded')) {
+    tableWrap.classList.remove('expanded');
+    expandToggle.textContent = '⛶ Expand';
+  }
+});
+const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
+
+exitFullscreenBtn.addEventListener('click', () => {
+  tableWrap.classList.remove('expanded');
+  expandToggle.textContent = '⛶ Expand';
+});
   </script>
 </body>
 </html>
