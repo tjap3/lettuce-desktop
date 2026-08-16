@@ -38,6 +38,33 @@
   .app{display:flex;min-height:100vh;}
   svg.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 
+  .table-wrap.expanded {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  background: white;
+  padding: 24px;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.table-wrap.expanded table {
+  width: 100%;
+}
+#exit-fullscreen-btn {
+  display: none;
+}
+
+.table-wrap.expanded #exit-fullscreen-btn {
+  display: inline-flex;
+  position: sticky;
+  top: 0;
+  margin-bottom: 12px;
+  z-index: 1001;
+}
   /* Sidebar */
   .sidebar{
     width:270px;
@@ -332,22 +359,24 @@
       </div>
 
       <div class="batch-bar">
-        <input type="checkbox">
+        <input type="checkbox" id="select-all-top">
         <span class="count">Select rows below, then choose a search method to run it on all of them at once</span>
         <select style="margin-left:auto;">
           <option>Batch method: Vector search</option>
           <option>Batch method: Text search</option>
+          <option>Batch method: LLM search</option>
         </select>
         <button class="btn btn-secondary">Set selected to defaults</button>
-        <button class="btn btn-primary">Run batch search (3 selected)</button>
+        <button class="btn btn-primary" id="run-batch-btn">Run batch search (3 selected)</button>
       </div>
     </div>
 
-    <div class="table-wrap">
+    <div class="table-wrap" id="table-wrap">
+      <button class="btn btn-secondary" id="exit-fullscreen-btn">✕ Exit fullscreen</button>
     <table>
       <thead>
         <tr>
-          <th class="checkbox-col"><input type="checkbox" title="Select all rows on this page for batch actions"></th>
+          <th class="checkbox-col"><input type="checkbox" id="select-all-header" title="Select all rows on this page for batch actions"></th>
           <th>Source term</th>
           <th>Domain</th>
           <th>Vocabulary</th>
@@ -358,7 +387,7 @@
       </thead>
       <tbody id="results-body">
         <tr>
-          <td class="checkbox-col"><input type="checkbox" checked></td>
+          <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
           <td class="term-cell">Memantine HCL</td>
           <td>
             
@@ -373,7 +402,7 @@
           <td>&mdash;</td>
         </tr>
         <tr>
-          <td class="checkbox-col"><input type="checkbox" checked></td>
+          <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
           <td class="term-cell">Ppaliperidone (Inv)</td>
           <td>
             
@@ -388,7 +417,7 @@
           <td>&mdash;</td>
         </tr>
         <tr>
-          <td class="checkbox-col"><input type="checkbox" checked></td>
+          <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
           <td class="term-cell">Trazidine</td>
           <td>
             
@@ -403,7 +432,7 @@
           <td>&mdash;</td>
         </tr>
         <tr>
-          <td class="checkbox-col"><input type="checkbox"></td>
+          <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
           <td class="term-cell">Trazodone HCL</td>
           <td>
             
@@ -418,7 +447,7 @@
           <td>1091648</td>
         </tr>
         <tr>
-          <td class="checkbox-col"><input type="checkbox"></td>
+          <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
           <td class="term-cell">Amitriptyline HCL</td>
           <td>
         
@@ -440,6 +469,7 @@
       <span>39 rows &middot; 9 columns</span>
       <div class="pages">
         <button>&lsaquo; Page 1 of 4 &rsaquo;</button>
+        <button class="btn btn-secondary" id="expand-toggle">⛶ Expand</button>
       </div>
     </div>
 
@@ -474,7 +504,7 @@
   </main>
 </div>
 
-<<script>
+<script>
   // --- Real API wiring ---
   const searchButton = document.querySelector('.btn-primary');
   const searchInput = document.querySelector('.search-input');
@@ -539,5 +569,79 @@
   }
 </script>
 
+<script>
+  const selectAllTop = document.getElementById('select-all-top');
+  const selectAllHeader = document.getElementById('select-all-header');
+  const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+  const runBatchBtn = document.getElementById('run-batch-btn');
+
+  function updateBatchButton() {
+    const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+    runBatchBtn.textContent = `Run batch search (${checkedCount} selected)`;
+  }
+
+  function setAllRows(checked) {
+    rowCheckboxes.forEach(cb => cb.checked = checked);
+    updateBatchButton();
+  }
+
+  function syncSelectAllState() {
+    const total = rowCheckboxes.length;
+    const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+    const allChecked = checkedCount === total;
+    const noneChecked = checkedCount === 0;
+
+    [selectAllTop, selectAllHeader].forEach(cb => {
+      cb.checked = allChecked;
+      cb.indeterminate = !allChecked && !noneChecked;
+    });
+  }
+
+  // Either "select all" checkbox drives all rows, and stays in sync with the other
+  [selectAllTop, selectAllHeader].forEach(masterCb => {
+    masterCb.addEventListener('change', () => {
+      setAllRows(masterCb.checked);
+      [selectAllTop, selectAllHeader].forEach(cb => {
+        cb.checked = masterCb.checked;
+        cb.indeterminate = false;
+      });
+    });
+  });
+
+  // Each row checkbox updates the count and keeps "select all" state accurate
+  rowCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      updateBatchButton();
+      syncSelectAllState();
+    });
+  });
+
+  // Set correct initial state on page load (since some rows start checked)
+  syncSelectAllState();
+  updateBatchButton();
+  const expandToggle = document.getElementById('expand-toggle');
+const tableWrap = document.getElementById('table-wrap');
+
+expandToggle.addEventListener('click', () => {
+  tableWrap.classList.toggle('expanded');
+  expandToggle.textContent = tableWrap.classList.contains('expanded')
+    ? '⛶ Collapse'
+    : '⛶ Expand';
+});
+
+// Let Escape key exit expanded view too
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && tableWrap.classList.contains('expanded')) {
+    tableWrap.classList.remove('expanded');
+    expandToggle.textContent = '⛶ Expand';
+  }
+});
+const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
+
+exitFullscreenBtn.addEventListener('click', () => {
+  tableWrap.classList.remove('expanded');
+  expandToggle.textContent = '⛶ Expand';
+});
+  </script>
 </body>
 </html>
