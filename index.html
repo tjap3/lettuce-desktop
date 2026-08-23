@@ -76,7 +76,7 @@
         <div class="subtitle">Concept mapping &middot; Built at the University of Nottingham</div>
       </div>
       <div class="header-right">
-        <button class="btn btn-secondary">
+        <button class="btn btn-secondary" id="upload-btn">
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
           Upload source file
         </button>
@@ -227,13 +227,15 @@
     </table>
     </div>
 
-    <div class="pager">
-      <span>39 rows &middot; 9 columns</span>
-      <div class="pages">
-        <button>&lsaquo; Page 1 of 4 &rsaquo;</button>
-        <button class="btn btn-secondary" id="expand-toggle">⛶ Expand</button>
-      </div>
-    </div>
+<div class="pager">
+  <span id="pager-info">40 rows · 7 columns</span>
+  <div class="pages">
+    <button class="btn btn-secondary" id="prev-page-btn">&lsaquo; Prev</button>
+    <span id="page-indicator">Page 1 of 1</span>
+    <button class="btn btn-secondary" id="next-page-btn">Next &rsaquo;</button>
+    <button class="btn btn-secondary" id="expand-toggle">⛶ Expand</button>
+  </div>
+</div>
 
     <footer>
       <div class="brand-strip">
@@ -273,69 +275,172 @@
   const tableBody = document.getElementById('results-body');
 
   // "Upload source file" button
-  const uploadButton = document.querySelector('.btn-secondary');
+  const uploadBtn = document.getElementById('upload-btn');
 
-  // Search button
+  // --- Pagination state ---
+  const PAGE_SIZE = 10;
+  let allRowsHtml = [];   // one <tr>...</tr> string per data row, full dataset
+  let currentPage = 1;
+
   searchButton.addEventListener('click', async () => {
     const term = searchInput.value.trim();
     if (!term) return;
 
     try {
       const response = await window.lettuceAPI.searchText(term);
-
       console.log('Raw API response:', response);
-
       renderResults(response.items);
     } catch (err) {
       console.error('Search failed:', err);
     }
   });
 
-  // Upload CSV button
-  uploadButton.addEventListener('click', async () => {
+  uploadBtn.addEventListener('click', async () => {
     try {
       const csvText = await window.lettuceAPI.uploadCsv();
+      if (!csvText) return; // user cancelled
 
-      if (!csvText) {
-        return; // User cancelled
-      }
-
-      console.log('Raw CSV text:', csvText);
-
-      // You can parse the CSV here later
-      // e.g. parseCsv(csvText);
-
+      const rows = parseCsv(csvText);
+      if (rows.length === 0) return;
+      populateSourceRows(rows);
     } catch (err) {
       console.error('CSV upload failed:', err);
     }
   });
 
+  function parseCsv(text) {
+    text = text.replace(/^\uFEFF/, '');
+    const rows = []; let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += c;
+      } else if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c !== '\r') field += c;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.some(cell => cell.trim() !== ''));
+  }
+
+  function findCol(header, names) {
+    const lower = header.map(h => h.trim().toLowerCase());
+    for (const n of names) { const i = lower.indexOf(n); if (i !== -1) return i; }
+    return -1;
+  }
+
+  // Detect a header row. Broadened to also catch identifier-style single
+  // tokens like "input_data" that don't contain any of the known keywords
+  // but clearly aren't a real source term.
+  function looksLikeHeaderRow(row) {
+    const termNames = ['source_term', 'source term', 'sourceterm', 'term', 'name',
+                        'concept_name', 'source', 'source_name'];
+    if (findCol(row, termNames) !== -1) return true;
+    if (row.some(c => /term|name|domain|vocab/i.test(c))) return true;
+    if (row.some(c => /^[a-z0-9]+(_[a-z0-9]+)+$/i.test(c.trim()))) return true;
+    return false;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  const domainOpts = ['Drug', 'Condition', 'Procedure'];
+  const vocabOpts  = ['RxNorm', 'SNOMED', 'ICD-10'];
+  const selOptions = (opts, val) => opts.map(o =>
+    `<option${o.toLowerCase() === String(val).toLowerCase() ? ' selected' : ''}>${o}</option>`).join('');
+
+  function populateSourceRows(rows) {
+    const termNames = ['source_term', 'source term', 'sourceterm', 'term', 'name',
+                       'concept_name', 'source', 'source_name'];
+    const hasHeader = looksLikeHeaderRow(rows[0]);
+
+    let termIdx = 0, domainIdx = -1, vocabIdx = -1, dataRows = rows;
+    if (hasHeader) {
+      const header = rows[0];
+      termIdx  = Math.max(0, findCol(header, termNames));
+      domainIdx = findCol(header, ['domain', 'domain_id']);
+      vocabIdx  = findCol(header, ['vocabulary', 'vocabulary_id', 'vocab']);
+      dataRows = rows.slice(1);
+    }
+
+    allRowsHtml = dataRows.map(r => {
+      const term = (r[termIdx] ?? '').trim();
+      if (!term) return null;
+      return `<tr>
+        <td class="checkbox-col"><input type="checkbox" class="row-checkbox"></td>
+        <td class="term-cell">${escapeHtml(term)}</td>
+        <td><select class="mode-select">${selOptions(domainOpts, domainIdx > -1 ? r[domainIdx] : 'Drug')}</select></td>
+        <td><select class="mode-select">${selOptions(vocabOpts, vocabIdx > -1 ? r[vocabIdx] : 'RxNorm')}</select></td>
+        <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
+        <td><span class="status-pill status-none">Not searched</span></td>
+        <td>&mdash;</td>
+      </tr>`;
+    }).filter(Boolean);
+
+    renderPage(1);
+  }
+
   function renderResults(items) {
-    tableBody.innerHTML = '';
+    allRowsHtml = items.map(item => `<tr>
+      <td class="checkbox-col"><input type="checkbox" class="row-checkbox"></td>
+      <td class="term-cell">${escapeHtml(item.conceptName ?? '')}</td>
+      <td class="tag-cell">${escapeHtml(item.domain ?? '—')}</td>
+      <td class="tag-cell">${escapeHtml(item.vocabulary ?? '—')}</td>
+      <td>Text search</td>
+      <td><span class="status-pill status-ready">Ready to review</span></td>
+      <td>${item.conceptId ?? '—'}</td>
+    </tr>`);
 
-    items.forEach((item) => {
-      const row = document.createElement('tr');
+    renderPage(1);
+  }
 
-      row.innerHTML = `
-        <td class="checkbox-col"><input type="checkbox"></td>
-        <td class="term-cell">${item.conceptName}</td>
-        <td class="tag-cell">${item.domain ?? '—'}</td>
-        <td class="tag-cell">${item.vocabulary ?? '—'}</td>
-        <td>Text search</td>
-        <td><span class="status-pill status-ready">Ready to review</span></td>
-        <td>${item.conceptId ?? '—'}</td>
-      `;
+  function renderPage(page) {
+    const totalPages = Math.max(1, Math.ceil(allRowsHtml.length / PAGE_SIZE));
+    currentPage = Math.min(Math.max(1, page), totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageRows = allRowsHtml.slice(start, start + PAGE_SIZE);
 
-      tableBody.appendChild(row);
+    tableBody.innerHTML = pageRows.join('');
+
+    const pageIndicator = document.getElementById('page-indicator');
+    if (pageIndicator) pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+    updateStats();
+    syncSelectAllState();
+    updateBatchButton();
+  }
+
+  function updateStats() {
+    const total = allRowsHtml.length;
+    let ready = 0, pending = 0, none = 0;
+    allRowsHtml.forEach(html => {
+      if (html.includes('status-ready')) ready++;
+      else if (html.includes('status-pending')) pending++;
+      else none++;
     });
+
+    const set = (cls, n) => { const el = document.querySelector(`.stat-value.${cls}`); if (el) el.textContent = n; };
+    set('neutral', total); set('ready', ready); set('searching', pending); set('pending', none);
+
+    const info = document.getElementById('pager-info');
+    if (info) info.textContent = `${total} rows · 7 columns`;
   }
 </script>
 
 <script>
   const selectAllTop = document.getElementById('select-all-top');
   const selectAllHeader = document.getElementById('select-all-header');
-  const rowCheckboxes = document.querySelectorAll('.row-checkbox');
   const runBatchBtn = document.getElementById('run-batch-btn');
+  const resultsBody = document.getElementById('results-body');
 
   function updateBatchButton() {
     const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
@@ -343,14 +448,14 @@
   }
 
   function setAllRows(checked) {
-    rowCheckboxes.forEach(cb => cb.checked = checked);
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = checked);
     updateBatchButton();
   }
 
   function syncSelectAllState() {
-    const total = rowCheckboxes.length;
+    const total = document.querySelectorAll('.row-checkbox').length;
     const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-    const allChecked = checkedCount === total;
+    const allChecked = checkedCount === total && total > 0;
     const noneChecked = checkedCount === 0;
 
     [selectAllTop, selectAllHeader].forEach(cb => {
@@ -370,40 +475,51 @@
     });
   });
 
-  // Each row checkbox updates the count and keeps "select all" state accurate
-  rowCheckboxes.forEach(cb => {
-    cb.addEventListener('change', () => {
+  // Delegated listener: catches row checkboxes that exist now AND any added later
+  // (e.g. after a CSV upload or search replaces #results-body's contents)
+  resultsBody.addEventListener('change', (e) => {
+    if (e.target.classList.contains('row-checkbox')) {
       updateBatchButton();
       syncSelectAllState();
-    });
+    }
   });
 
   // Set correct initial state on page load (since some rows start checked)
   syncSelectAllState();
   updateBatchButton();
+
   const expandToggle = document.getElementById('expand-toggle');
-const tableWrap = document.getElementById('table-wrap');
+  const tableWrap = document.getElementById('table-wrap');
 
-expandToggle.addEventListener('click', () => {
-  tableWrap.classList.toggle('expanded');
-  expandToggle.textContent = tableWrap.classList.contains('expanded')
-    ? '⛶ Collapse'
-    : '⛶ Expand';
-});
+  expandToggle.addEventListener('click', () => {
+    tableWrap.classList.toggle('expanded');
+    expandToggle.textContent = tableWrap.classList.contains('expanded')
+      ? '⛶ Collapse'
+      : '⛶ Expand';
+  });
 
-// Let Escape key exit expanded view too
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && tableWrap.classList.contains('expanded')) {
+  // Let Escape key exit expanded view too
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && tableWrap.classList.contains('expanded')) {
+      tableWrap.classList.remove('expanded');
+      expandToggle.textContent = '⛶ Expand';
+    }
+  });
+
+  const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
+  exitFullscreenBtn.addEventListener('click', () => {
     tableWrap.classList.remove('expanded');
     expandToggle.textContent = '⛶ Expand';
-  }
-});
-const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
+  });
 
-exitFullscreenBtn.addEventListener('click', () => {
-  tableWrap.classList.remove('expanded');
-  expandToggle.textContent = '⛶ Expand';
-});
+  const prevPageBtn = document.getElementById('prev-page-btn');
+  const nextPageBtn = document.getElementById('next-page-btn');
+
+  prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
+  nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
+
+  allRowsHtml = Array.from(resultsBody.querySelectorAll('tr')).map(tr => tr.outerHTML);
+  renderPage(1);
   </script>
 </body>
 </html>
