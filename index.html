@@ -80,6 +80,9 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
           Upload source file
         </button>
+        <button class="btn btn-secondary" id="save-session-btn">Save session</button>
+        <input type="text" id="session-name-input" class="pill-select" placeholder="Session name…" style="width:160px;">
+        <select id="load-session-select" class="pill-select"><option value="">Load previous session…</option></select>
       </div>
     </div>
 
@@ -269,23 +272,160 @@
 </div>
 
 <script>
-  // --- Real API wiring ---
   const searchButton = document.querySelector('.btn-primary');
   const searchInput = document.querySelector('.search-input');
   const tableBody = document.getElementById('results-body');
-
-  // "Upload source file" button
   const uploadBtn = document.getElementById('upload-btn');
+  const saveSessionBtn = document.getElementById('save-session-btn');
+  const loadSessionSelect = document.getElementById('load-session-select');
 
-  // --- Pagination state ---
   const PAGE_SIZE = 10;
-  let allRowsHtml = [];   // one <tr>...</tr> string per data row, full dataset
+  let allRows = [];   // [{term, domain, vocab, searchMode, status, conceptId, checked}]
   let currentPage = 1;
+
+  const domainOpts = ['Drug', 'Condition', 'Procedure'];
+  const vocabOpts  = ['RxNorm', 'SNOMED', 'ICD-10'];
+  const selOptions = (opts, val) => opts.map(o =>
+    `<option${o.toLowerCase() === String(val).toLowerCase() ? ' selected' : ''}>${o}</option>`).join('');
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function statusPillHtml(status) {
+    if (status === 'ready') return `<span class="status-pill status-ready">Ready to review</span>`;
+    if (status === 'searching') return `<span class="status-pill status-pending"><span class="spinner"></span> Searching&hellip;</span>`;
+    return `<span class="status-pill status-none">Not searched</span>`;
+  }
+
+  function renderRowHtml(row, idx) {
+    return `<tr data-row-idx="${idx}">
+      <td class="checkbox-col"><input type="checkbox" class="row-checkbox" ${row.checked ? 'checked' : ''}></td>
+      <td class="term-cell">${escapeHtml(row.term)}</td>
+      <td><select class="mode-select" data-field="domain">${selOptions(domainOpts, row.domain)}</select></td>
+      <td><select class="mode-select" data-field="vocab">${selOptions(vocabOpts, row.vocab)}</select></td>
+      <td><select class="mode-select" data-field="searchMode">${selOptions(['Text search', 'Vector search'], row.searchMode)}</select></td>
+      <td>${statusPillHtml(row.status)}</td>
+      <td>${row.conceptId ?? '&mdash;'}</td>
+    </tr>`;
+  }
+
+  function renderPage(page) {
+    const totalPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
+    currentPage = Math.min(Math.max(1, page), totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    tableBody.innerHTML = allRows.slice(start, start + PAGE_SIZE)
+      .map((r, i) => renderRowHtml(r, start + i)).join('');
+
+    const pageIndicator = document.getElementById('page-indicator');
+    if (pageIndicator) pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+    updateStats();
+    syncSelectAllState();
+    updateBatchButton();
+  }
+
+  // Delegated: keeps allRows in sync with whatever the user edits on screen
+  tableBody.addEventListener('change', (e) => {
+    const tr = e.target.closest('tr[data-row-idx]');
+    if (!tr) return;
+    const idx = Number(tr.dataset.rowIdx);
+    if (e.target.classList.contains('row-checkbox')) {
+      allRows[idx].checked = e.target.checked;
+    } else if (e.target.classList.contains('mode-select')) {
+      allRows[idx][e.target.dataset.field] = e.target.value;
+    }
+  });
+
+  function updateStats() {
+    const total = allRows.length;
+    const ready = allRows.filter(r => r.status === 'ready').length;
+    const searching = allRows.filter(r => r.status === 'searching').length;
+    const none = allRows.filter(r => !r.status || r.status === 'none').length;
+    const set = (cls, n) => { const el = document.querySelector(`.stat-value.${cls}`); if (el) el.textContent = n; };
+    set('neutral', total); set('ready', ready); set('searching', searching); set('pending', none);
+    const info = document.getElementById('pager-info');
+    if (info) info.textContent = `${total} rows · 7 columns`;
+  }
+
+  function looksLikeHeaderRow(row) {
+    const termNames = ['source_term','source term','sourceterm','term','name','concept_name','source','source_name'];
+    const lower = row.map(h => h.trim().toLowerCase());
+    if (termNames.some(n => lower.includes(n))) return true;
+    if (row.some(c => /term|name|domain|vocab/i.test(c))) return true;
+    if (row.some(c => /^[a-z0-9]+(_[a-z0-9]+)+$/i.test(c.trim()))) return true;
+    return false;
+  }
+  function findCol(header, names) {
+    const lower = header.map(h => h.trim().toLowerCase());
+    for (const n of names) { const i = lower.indexOf(n); if (i !== -1) return i; }
+    return -1;
+  }
+  function parseCsv(text) {
+    text = text.replace(/^\uFEFF/, '');
+    const rows = []; let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i+1]==='"'){field+='"';i++;} else inQuotes=false; }
+        else field += c;
+      } else if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field=''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row=[]; field=''; }
+      else if (c !== '\r') field += c;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.some(cell => cell.trim() !== ''));
+  }
+
+  function populateSourceRows(rows) {
+    const termNames = ['source_term','source term','sourceterm','term','name','concept_name','source','source_name'];
+    const hasHeader = looksLikeHeaderRow(rows[0]);
+    let termIdx = 0, domainIdx = -1, vocabIdx = -1, dataRows = rows;
+    if (hasHeader) {
+      const header = rows[0];
+      termIdx = Math.max(0, findCol(header, termNames));
+      domainIdx = findCol(header, ['domain','domain_id']);
+      vocabIdx = findCol(header, ['vocabulary','vocabulary_id','vocab']);
+      dataRows = rows.slice(1);
+    }
+    allRows = dataRows.map(r => {
+      const term = (r[termIdx] ?? '').trim();
+      if (!term) return null;
+      return {
+        term,
+        domain: domainIdx > -1 ? r[domainIdx] : 'Drug',
+        vocab: vocabIdx > -1 ? r[vocabIdx] : 'RxNorm',
+        searchMode: 'Text search',
+        status: 'none',
+        conceptId: null,
+        checked: false,
+      };
+    }).filter(Boolean);
+    renderPage(1);
+  }
+
+  function renderResults(items) {
+    allRows = items.map(item => ({
+      term: item.conceptName ?? '',
+      domain: item.domain ?? 'Drug',
+      vocab: item.vocabulary ?? 'RxNorm',
+      searchMode: 'Text search',
+      status: 'ready',
+      conceptId: item.conceptId ?? null,
+      checked: false,
+    }));
+    renderPage(1);
+  }
 
   searchButton.addEventListener('click', async () => {
     const term = searchInput.value.trim();
     if (!term) return;
-
     try {
       const response = await window.lettuceAPI.searchText(term);
       console.log('Raw API response:', response);
@@ -298,8 +438,7 @@
   uploadBtn.addEventListener('click', async () => {
     try {
       const csvText = await window.lettuceAPI.uploadCsv();
-      if (!csvText) return; // user cancelled
-
+      if (!csvText) return;
       const rows = parseCsv(csvText);
       if (rows.length === 0) return;
       populateSourceRows(rows);
@@ -308,132 +447,44 @@
     }
   });
 
-  function parseCsv(text) {
-    text = text.replace(/^\uFEFF/, '');
-    const rows = []; let row = [], field = '', inQuotes = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (inQuotes) {
-        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
-        else field += c;
-      } else if (c === '"') inQuotes = true;
-      else if (c === ',') { row.push(field); field = ''; }
-      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-      else if (c !== '\r') field += c;
+  // --- Save / load sessions ---
+const sessionNameInput = document.getElementById('session-name-input');
+
+saveSessionBtn.addEventListener('click', async () => {
+  if (allRows.length === 0) return;
+  const name = sessionNameInput.value.trim() || `Session ${new Date().toLocaleString()}`;
+  try {
+    await window.lettuceAPI.saveProject(name, allRows);
+    sessionNameInput.value = '';
+    await refreshSessionList();
+    console.log('Session saved successfully:', name);
+  } catch (err) {
+    console.error('Save session failed:', err);
+  }
+});
+
+sessionNameInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') saveSessionBtn.click();
+});
+
+  async function refreshSessionList() {
+    const projects = await window.lettuceAPI.listProjects();
+    loadSessionSelect.innerHTML = '<option value="">Load previous session…</option>' +
+      projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.rowCount} rows)</option>`).join('');
+  }
+
+  loadSessionSelect.addEventListener('change', async () => {
+    const id = loadSessionSelect.value;
+    if (!id) return;
+    try {
+      const project = await window.lettuceAPI.loadProject(id);
+      if (!project) return;
+      allRows = project.rows;
+      renderPage(1);
+    } catch (err) {
+      console.error('Load session failed:', err);
     }
-    if (field !== '' || row.length) { row.push(field); rows.push(row); }
-    return rows.filter(r => r.some(cell => cell.trim() !== ''));
-  }
-
-  function findCol(header, names) {
-    const lower = header.map(h => h.trim().toLowerCase());
-    for (const n of names) { const i = lower.indexOf(n); if (i !== -1) return i; }
-    return -1;
-  }
-
-  // Detect a header row. Broadened to also catch identifier-style single
-  // tokens like "input_data" that don't contain any of the known keywords
-  // but clearly aren't a real source term.
-  function looksLikeHeaderRow(row) {
-    const termNames = ['source_term', 'source term', 'sourceterm', 'term', 'name',
-                        'concept_name', 'source', 'source_name'];
-    if (findCol(row, termNames) !== -1) return true;
-    if (row.some(c => /term|name|domain|vocab/i.test(c))) return true;
-    if (row.some(c => /^[a-z0-9]+(_[a-z0-9]+)+$/i.test(c.trim()))) return true;
-    return false;
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  const domainOpts = ['Drug', 'Condition', 'Procedure'];
-  const vocabOpts  = ['RxNorm', 'SNOMED', 'ICD-10'];
-  const selOptions = (opts, val) => opts.map(o =>
-    `<option${o.toLowerCase() === String(val).toLowerCase() ? ' selected' : ''}>${o}</option>`).join('');
-
-  function populateSourceRows(rows) {
-    const termNames = ['source_term', 'source term', 'sourceterm', 'term', 'name',
-                       'concept_name', 'source', 'source_name'];
-    const hasHeader = looksLikeHeaderRow(rows[0]);
-
-    let termIdx = 0, domainIdx = -1, vocabIdx = -1, dataRows = rows;
-    if (hasHeader) {
-      const header = rows[0];
-      termIdx  = Math.max(0, findCol(header, termNames));
-      domainIdx = findCol(header, ['domain', 'domain_id']);
-      vocabIdx  = findCol(header, ['vocabulary', 'vocabulary_id', 'vocab']);
-      dataRows = rows.slice(1);
-    }
-
-    allRowsHtml = dataRows.map(r => {
-      const term = (r[termIdx] ?? '').trim();
-      if (!term) return null;
-      return `<tr>
-        <td class="checkbox-col"><input type="checkbox" class="row-checkbox"></td>
-        <td class="term-cell">${escapeHtml(term)}</td>
-        <td><select class="mode-select">${selOptions(domainOpts, domainIdx > -1 ? r[domainIdx] : 'Drug')}</select></td>
-        <td><select class="mode-select">${selOptions(vocabOpts, vocabIdx > -1 ? r[vocabIdx] : 'RxNorm')}</select></td>
-        <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
-        <td><span class="status-pill status-none">Not searched</span></td>
-        <td>&mdash;</td>
-      </tr>`;
-    }).filter(Boolean);
-
-    renderPage(1);
-  }
-
-  function renderResults(items) {
-    allRowsHtml = items.map(item => `<tr>
-      <td class="checkbox-col"><input type="checkbox" class="row-checkbox"></td>
-      <td class="term-cell">${escapeHtml(item.conceptName ?? '')}</td>
-      <td class="tag-cell">${escapeHtml(item.domain ?? '—')}</td>
-      <td class="tag-cell">${escapeHtml(item.vocabulary ?? '—')}</td>
-      <td>Text search</td>
-      <td><span class="status-pill status-ready">Ready to review</span></td>
-      <td>${item.conceptId ?? '—'}</td>
-    </tr>`);
-
-    renderPage(1);
-  }
-
-  function renderPage(page) {
-    const totalPages = Math.max(1, Math.ceil(allRowsHtml.length / PAGE_SIZE));
-    currentPage = Math.min(Math.max(1, page), totalPages);
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const pageRows = allRowsHtml.slice(start, start + PAGE_SIZE);
-
-    tableBody.innerHTML = pageRows.join('');
-
-    const pageIndicator = document.getElementById('page-indicator');
-    if (pageIndicator) pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
-
-    const prevBtn = document.getElementById('prev-page-btn');
-    const nextBtn = document.getElementById('next-page-btn');
-    if (prevBtn) prevBtn.disabled = currentPage <= 1;
-    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
-
-    updateStats();
-    syncSelectAllState();
-    updateBatchButton();
-  }
-
-  function updateStats() {
-    const total = allRowsHtml.length;
-    let ready = 0, pending = 0, none = 0;
-    allRowsHtml.forEach(html => {
-      if (html.includes('status-ready')) ready++;
-      else if (html.includes('status-pending')) pending++;
-      else none++;
-    });
-
-    const set = (cls, n) => { const el = document.querySelector(`.stat-value.${cls}`); if (el) el.textContent = n; };
-    set('neutral', total); set('ready', ready); set('searching', pending); set('pending', none);
-
-    const info = document.getElementById('pager-info');
-    if (info) info.textContent = `${total} rows · 7 columns`;
-  }
+  });
 </script>
 
 <script>
@@ -518,8 +569,17 @@
   prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
   nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
 
-  allRowsHtml = Array.from(resultsBody.querySelectorAll('tr')).map(tr => tr.outerHTML);
+
+   // Default rows shown on first launch, before any upload/search/session-load
+  allRows = [
+    { term: 'Memantine HCL', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Vector search', status: 'ready', conceptId: null, checked: true },
+    { term: 'Ppaliperidone (Inv)', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'searching', conceptId: null, checked: true },
+    { term: 'Trazidine', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'none', conceptId: null, checked: true },
+    { term: 'Trazodone HCL', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'ready', conceptId: 1091648, checked: true },
+    { term: 'Amitriptyline HCL', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'none', conceptId: null, checked: true },
+  ];
   renderPage(1);
+  refreshSessionList(); 
   </script>
 </body>
 </html>
