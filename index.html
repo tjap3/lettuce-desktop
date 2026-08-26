@@ -116,7 +116,7 @@
     <div class="search-panel">
       <div class="search-row">
         <input class="search-input" type="text" placeholder="Search a term, or upload a source file above...">
-        <select class="pill-select"><option>Text search</option><option>Vector search</option></select>
+        <select class="pill-select"><option>Text search</option><option>Vector search</option><option>LLM search</option></select>
         <button class="btn btn-primary">
           <svg class="icon" viewBox="0 0 24 24" style="stroke:white;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
           Search
@@ -127,8 +127,8 @@
         <input type="checkbox" id="select-all-top">
         <span class="count">Select rows below, then choose a search method to run it on all of them at once</span>
         <select style="margin-left:auto;">
-          <option>Batch method: Vector search</option>
           <option>Batch method: Text search</option>
+          <option>Batch method: Vector search</option>
           <option>Batch method: LLM search</option>
         </select>
         <button class="btn btn-secondary">Set selected to defaults</button>
@@ -162,7 +162,7 @@
             
             <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
-          <td><select class="mode-select"><option>Vector search</option><option>Text search</option></select></td>
+          <td><select class="mode-select"><option>Text search</option><option>Vector search</option><option>LLM search</option></select></td>
           <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--green);"><path d="M20 6L9 17l-5-5"/></svg> Ready to review</span></td>
           <td>&mdash;</td>
         </tr>
@@ -177,7 +177,7 @@
             
             <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
+          <td><select class="mode-select"><option>Text search</option><option>Vector search</option><option>LLM search</option></select></td>
           <td><span class="status-pill status-pending"><span class="spinner"></span> Searching&hellip;</span></td>
           <td>&mdash;</td>
         </tr>
@@ -192,7 +192,7 @@
             
             <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
+          <td><select class="mode-select"><option>Text search</option><option>Vector search</option><option>LLM search</option></select></td>
           <td><span class="status-pill status-none">Not searched</span></td>
           <td>&mdash;</td>
         </tr>
@@ -207,7 +207,7 @@
             
             <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
+          <td><select class="mode-select"><option>Text search</option><option>Vector search</option><option>LLM search</option></select></td>
           <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--green);"><path d="M20 6L9 17l-5-5"/></svg> Ready to review</span></td>
           <td>1091648</td>
         </tr>
@@ -222,7 +222,7 @@
             
             <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
           </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
+          <td><select class="mode-select"><option>Text search</option><option>Vector search</option><option>LLM search</option></select></td>
           <td><span class="status-pill status-none">Not searched</span></td>
           <td>&mdash;</td>
         </tr>
@@ -256,15 +256,17 @@
     <div class="uon-footer">
       <div class="uon-footer-top">
         <div class="uon-logo-block">
-          <img src="assets/uon-logo.png" alt="University of Nottingham" class="uon-logo-img">
+          <a href="https://www.nottingham.ac.uk/" target="_blank">
+          <img src="assets/uon-transparent-logo.png" alt="University of Nottingham" class="uon-logo-img">
+          </a>
         </div>
         <div class="uon-links">
-          <a href="#"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg> Privacy Policy</a>
-          <a href="#"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h6M9 12h6M9 16h4"/></svg> Terms and Conditions</a>
+          <a href="https://www.nottingham.ac.uk/utilities/privacy/privacy.aspx" target="_blank"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg> Privacy Policy</a>
+          <a href="https://www.nottingham.ac.uk/utilities/terms.aspx" target="_blank"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h6M9 12h6M9 16h4"/></svg> Terms and Conditions</a>
         </div>
       </div>
       <div class="uon-footer-bottom">
-        &copy; 2026 <a href="#">University of Nottingham</a>. All Rights Reserved.
+        &copy; 2026 <a href="https://www.nottingham.ac.uk/" target="_blank"">University of Nottingham</a>. All Rights Reserved.
       </div>
     </div>
     </div>
@@ -305,7 +307,7 @@
       <td class="term-cell">${escapeHtml(row.term)}</td>
       <td><select class="mode-select" data-field="domain">${selOptions(domainOpts, row.domain)}</select></td>
       <td><select class="mode-select" data-field="vocab">${selOptions(vocabOpts, row.vocab)}</select></td>
-      <td><select class="mode-select" data-field="searchMode">${selOptions(['Text search', 'Vector search'], row.searchMode)}</select></td>
+      <td><select class="mode-select" data-field="searchMode">${selOptions(['Text search', 'Vector search', 'LLM search'], row.searchMode)}</select></td>
       <td>${statusPillHtml(row.status)}</td>
       <td>${row.conceptId ?? '&mdash;'}</td>
     </tr>`;
@@ -570,14 +572,6 @@ sessionNameInput.addEventListener('keydown', (e) => {
   nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
 
 
-   // Default rows shown on first launch, before any upload/search/session-load
-  allRows = [
-    { term: 'Memantine HCL', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Vector search', status: 'ready', conceptId: null, checked: true },
-    { term: 'Ppaliperidone (Inv)', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'searching', conceptId: null, checked: true },
-    { term: 'Trazidine', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'none', conceptId: null, checked: true },
-    { term: 'Trazodone HCL', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'ready', conceptId: 1091648, checked: true },
-    { term: 'Amitriptyline HCL', domain: 'Drug', vocab: 'RxNorm', searchMode: 'Text search', status: 'none', conceptId: null, checked: true },
-  ];
   renderPage(1);
   refreshSessionList(); 
   </script>
