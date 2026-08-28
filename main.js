@@ -79,5 +79,12 @@ ipcMain.handle('load-project', async (event, id) => {
   if (!fs.existsSync(filePath)) return null;
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 });
+ipcMain.handle('delete-project', async (event, id) => {
+  const dir = projectsDir();
+  const filePath = path.join(dir, `${id}.json`);
+  if (!fs.existsSync(filePath)) return { deleted: false };
+  fs.unlinkSync(filePath);
+  return { deleted: true };
+});
 
 app.whenReady().then(createWindow);
