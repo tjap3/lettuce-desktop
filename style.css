@@ -780,3 +780,61 @@ footer .links a:hover {
   flex-direction: column;
   align-items: flex-start;
 }
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--card);
+  border-radius: 12px;
+  width: 380px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 { margin: 0; font-size: 15px; }
+.modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); }
+
+.modal-body { padding: 14px 16px; overflow-y: auto; }
+
+.session-list { list-style: none; margin: 0; padding: 0; }
+.session-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.session-list-item:last-child { border-bottom: none; }
+.session-list-name { font-size: 13px; }
+.session-list-meta { color: var(--muted); font-size: 11.5px; }
+.session-delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 6px;
+}
+.session-delete-btn:hover { color: #c0392b; }
+.session-list-empty { color: var(--muted); font-size: 13px; }
+
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }

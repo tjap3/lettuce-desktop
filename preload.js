@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('lettuceAPI', {
   saveProject: (name, rows) => ipcRenderer.invoke('save-project', { name, rows }),
   listProjects: () => ipcRenderer.invoke('list-projects'),
   loadProject: (id) => ipcRenderer.invoke('load-project', id),
+  deleteProject: (id) => ipcRenderer.invoke('delete-project', id),
 });

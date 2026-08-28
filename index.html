@@ -111,6 +111,7 @@
                 Load previous session…
               </option>
             </select>
+            <button class="btn btn-secondary" id="manage-sessions-btn">Manage sessions</button>
           </div>
         </div>
 
@@ -405,6 +406,25 @@
       </div>
     </main>
   </div>
+  
+  <div class="modal-overlay" id="sessions-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Manage sessions</h3>
+      <button class="modal-close" id="sessions-modal-close">&times;</button>
+    </div>
+    <div class="modal-body" id="sessions-list-view">
+      <ul class="session-list" id="session-list"></ul>
+    </div>
+    <div class="modal-body" id="sessions-confirm-view" style="display:none;">
+      <p id="confirm-delete-text"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="confirm-delete-no">No</button>
+        <button class="btn btn-primary" id="confirm-delete-yes" style="background:#c0392b;border-color:#c0392b;">Yes, delete</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <script>
     const searchButton = document.querySelector('.btn-primary');
@@ -769,6 +789,80 @@
     prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
     nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
 
+
+        const manageSessionsBtn = document.getElementById('manage-sessions-btn');
+    const sessionsModalOverlay = document.getElementById('sessions-modal-overlay');
+    const sessionsModalClose = document.getElementById('sessions-modal-close');
+    const sessionListEl = document.getElementById('session-list');
+    const sessionsListView = document.getElementById('sessions-list-view');
+    const sessionsConfirmView = document.getElementById('sessions-confirm-view');
+    const confirmDeleteText = document.getElementById('confirm-delete-text');
+    const confirmDeleteYes = document.getElementById('confirm-delete-yes');
+    const confirmDeleteNo = document.getElementById('confirm-delete-no');
+
+    let pendingDeleteId = null;
+
+    async function renderSessionListModal() {
+      const projects = await window.lettuceAPI.listProjects();
+      sessionListEl.innerHTML = projects.length === 0
+        ? '<li class="session-list-empty">No saved sessions yet.</li>'
+        : projects.map(p => `
+          <li class="session-list-item" data-id="${p.id}">
+            <span class="session-list-name">${escapeHtml(p.name)} <span class="session-list-meta">(${p.rowCount} rows)</span></span>
+            <button class="session-delete-btn" data-id="${p.id}" data-name="${escapeHtml(p.name)}" title="Delete session">&times;</button>
+          </li>`).join('');
+    }
+
+    async function openSessionsModal() {
+      await renderSessionListModal();
+      sessionsListView.style.display = '';
+      sessionsConfirmView.style.display = 'none';
+      sessionsModalOverlay.classList.add('open');
+    }
+
+    function closeSessionsModal() {
+      sessionsModalOverlay.classList.remove('open');
+      pendingDeleteId = null;
+    }
+
+    manageSessionsBtn.addEventListener('click', openSessionsModal);
+    sessionsModalClose.addEventListener('click', closeSessionsModal);
+    sessionsModalOverlay.addEventListener('click', (e) => {
+      if (e.target === sessionsModalOverlay) closeSessionsModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sessionsModalOverlay.classList.contains('open')) closeSessionsModal();
+    });
+
+    sessionListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.session-delete-btn');
+      if (!btn) return;
+      pendingDeleteId = btn.dataset.id;
+      confirmDeleteText.textContent = `Do you want to delete "${btn.dataset.name}"?`;
+      sessionsListView.style.display = 'none';
+      sessionsConfirmView.style.display = '';
+    });
+
+    confirmDeleteNo.addEventListener('click', () => {
+      pendingDeleteId = null;
+      sessionsConfirmView.style.display = 'none';
+      sessionsListView.style.display = '';
+    });
+
+    confirmDeleteYes.addEventListener('click', async () => {
+      if (!pendingDeleteId) return;
+      try {
+        if (loadSessionSelect.value === pendingDeleteId) loadSessionSelect.value = '';
+        await window.lettuceAPI.deleteProject(pendingDeleteId);
+      } catch (err) {
+        console.error('Delete session failed:', err);
+      }
+      pendingDeleteId = null;
+      await renderSessionListModal();
+      await refreshSessionList();
+      sessionsConfirmView.style.display = 'none';
+      sessionsListView.style.display = '';
+    });
 
     renderPage(1);
     refreshSessionList(); 
