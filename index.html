@@ -1,543 +1,872 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>Lettuce</title>
-<style>
-  :root{
-    --brand-blue:#1c1c1c;
-    --accent:#3f8f4f;
-    --accent-dark:#2d6b3a;
-    --accent-light:#e9f5ec;
-    --bg:#f7f8fa;
-    --card:#ffffff;
-    --border:#e7e9ee;
-    --ink:#14161a;
-    --muted:#6b7280;
-    --muted-strong:#4b5563;
-    --amber:#92600a;
-    --amber-bg:#fef3dc;
-    --amber-icon:#b8790f;
-    --green:#2d6b3a;
-    --green-bg:#e9f5ec;
-    --green-icon:#3f8f4f;
-    --gray-bg:#f3f4f6;
-    --gray-ink:#374151;
-    --settings-bg:#f9fafb;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-    background:var(--bg);
-    color:var(--ink);
-    font-size:14px;
-  }
-  .app{display:flex;min-height:100vh;}
-  svg.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
-
-  /* Sidebar */
-  .sidebar{
-    width:270px;
-    background:var(--card);
-    border-right:1px solid var(--border);
-    padding:22px 20px;
-    flex-shrink:0;
-    overflow-y:auto;
-  }
-  .brand{display:flex;align-items:center;margin-bottom:24px;}
-  .brand-mark{width:30px;height:30px;flex-shrink:0;}
-  .brand-name{
-    font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--brand-blue);
-    letter-spacing:-.2px;
-  }
-
-  .sidebar-block{border-radius:10px;padding:14px 14px 4px;margin-bottom:16px;}
-  .sidebar-block.settings{background:var(--settings-bg);border:1px solid var(--border);}
-  .sidebar-block.defaults{padding-top:6px;}
-  .block-divider{height:1px;background:var(--border);margin:18px 0 14px;}
-
-  .sidebar h3{
-    font-size:11px;text-transform:uppercase;letter-spacing:.5px;
-    color:var(--muted);margin:0 0 10px;font-weight:600;
-  }
-  .field{margin-bottom:14px;}
-  .field label{display:block;font-size:12.5px;color:var(--muted-strong);margin-bottom:5px;font-weight:500;}
-  .field select, .field input[type=text]{
-    width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);
-    background:var(--card);color:var(--ink);font-size:13px;
-  }
-  .toggle-row{
-    display:flex;align-items:center;justify-content:space-between;
-    background:var(--card);padding:9px 11px;border:1px solid var(--border);border-radius:7px;margin-bottom:10px;
-  }
-  .toggle-row span{font-size:12.5px;color:var(--ink);}
-  .switch{width:34px;height:19px;border-radius:20px;background:var(--border);position:relative;cursor:pointer;flex-shrink:0;}
-  .switch.on{background:var(--accent);}
-  .switch::after{content:'';position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:white;transition:.15s;}
-  .switch.on::after{left:17px;}
-  .helper{font-size:11.5px;font-weight:400;color:var(--muted);line-height:1.5;margin-top:-4px;margin-bottom:14px;}
-  .inspector-note{
-    background:var(--accent-light);border:1px dashed #a9d3d6;border-radius:7px;padding:10px 11px;
-    font-size:11.5px;font-weight:400;color:#0a5a63;line-height:1.5;margin-top:8px;
-  }
-
-  .main{flex:1;padding:26px 32px;}
-  .main-inner{max-width:1500px;margin:0 auto;width:100%;}
-
-  .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
-  .title-row h1{
-    font-family:'Playfair Display',serif;font-size:30px;margin:0 0 4px;font-weight:600;
-    color:var(--brand-blue);letter-spacing:-.3px;
-  }
-  .title-row .subtitle{font-size:13px;font-weight:400;color:var(--muted);}
-  .header-right{display:flex;align-items:center;gap:14px;}
-  .profile{display:flex;align-items:center;gap:10px;}
-  .avatar{
-    width:33px;height:33px;border-radius:50%;background:var(--accent-light);color:var(--accent-dark);
-    display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12.5px;
-  }
-  .profile-text{font-size:12.5px;line-height:1.3;}
-  .profile-text .greet{color:var(--muted);font-size:11.5px;font-weight:400;}
-  .profile-text .name{font-weight:600;color:var(--ink);}
-
-  /* Stat cards - flat elevation, color meaning via icon+number, no bottom border */
-  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
-  .stat-card{
-    background:var(--card);border:1px solid var(--border);border-radius:10px;
-    padding:13px 15px;display:flex;align-items:center;gap:11px;
-  }
-  .stat-icon-wrap{
-    width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    border:1.4px solid currentColor;flex-shrink:0;
-  }
-  .stat-icon-wrap.neutral{color:var(--muted-strong);}
-  .stat-icon-wrap.ready{color:var(--green-icon);}
-  .stat-icon-wrap.searching{color:var(--amber-icon);}
-  .stat-icon-wrap.pending{color:var(--muted);}
-  .stat-text{line-height:1.25;}
-  .stat-value{font-size:19px;font-weight:700;}
-  .stat-value.neutral, .stat-value.pending{color:var(--ink);}
-  .stat-value.ready{color:var(--green);}
-  .stat-value.searching{color:var(--amber);}
-  .stat-label{font-size:11px;color:var(--muted-strong);font-weight:500;}
-
-  .search-panel{
-    background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px;
-    box-shadow:0 1px 2px rgba(16,24,40,.03);
-  }
-  .search-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-  .search-input{
-    flex:1;min-width:220px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);
-    background:var(--bg);font-size:13.5px;
-  }
-  .search-input:focus, select:focus, button:focus{outline:2px solid var(--accent);outline-offset:1px;}
-  select.pill-select{
-    padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:13px;color:var(--ink);
-  }
-
-  /* Button tiers - primary taller + stronger shadow, secondary flatter */
-  .btn{border:none;font-weight:600;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-  .btn-primary{
-    background:var(--accent);color:white;border:1.5px solid var(--accent);border-radius:9px;
-    padding:12px 22px;box-shadow:0 2px 6px rgba(14,127,140,.28),0 1px 2px rgba(14,127,140,.15);
-  }
-  .btn-primary:hover{background:var(--accent-dark);border-color:var(--accent-dark);}
-  .btn-secondary{
-    background:transparent;color:var(--accent-dark);border:1.4px solid var(--border);border-radius:7px;
-    padding:9px 16px;box-shadow:none;
-  }
-  .btn-secondary:hover{background:var(--gray-bg);border-color:#d1d5db;}
-
-  .batch-bar{
-    display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap;
-  }
-  .batch-bar .count{font-size:12.5px;font-weight:400;color:var(--muted-strong);}
-  .batch-bar select{padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:12.5px;background:var(--card);}
-
-  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
-  thead th{
-    background:var(--bg);color:var(--muted-strong);text-align:left;font-size:11px;
-    text-transform:uppercase;letter-spacing:.5px;padding:13px 14px;font-weight:600;border-bottom:1px solid var(--border);
-  }
-  th.checkbox-col, td.checkbox-col{width:36px;}
-  tbody td{padding:13px 14px;border-top:1px solid var(--border);font-size:13.5px;font-weight:400;vertical-align:middle;}
-  tbody tr:hover{background:#fafbfc;}
-  .term-cell{font-weight:600;color:var(--ink);}
-
-  /* Tags: full pill reserved for labels/badges */
-  .tag-cell{position:relative;}
-  .tag{
-    display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;
-    background:var(--gray-bg);color:var(--gray-ink);font-size:12px;font-weight:500;cursor:pointer;
-  }
-  .tag:hover{background:#e5e7eb;}
-  .tag-cell select.cell-select{
-    display:none;padding:6px 9px;border-radius:7px;border:1px solid var(--border);font-size:12.5px;background:var(--card);
-  }
-  .tag-cell.editing .tag{display:none;}
-  .tag-cell.editing select.cell-select{display:inline-block;}
-  select.mode-select{padding:6px 9px;border-radius:7px;border:1px solid var(--border);font-size:12.5px;background:var(--card);}
-
-  .status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;}
-  .status-ready{background:var(--green-bg);color:var(--green);}
-  .status-pending{background:var(--amber-bg);color:var(--amber);}
-  .spinner{width:11px;height:11px;border-radius:50%;border:2px solid #f0dcb8;border-top-color:var(--amber-icon);animation:spin .7s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .status-none{background:var(--gray-bg);color:var(--gray-ink);}
-
-  .table-wrap{overflow-x:auto;}
-  .pager{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12.5px;font-weight:400;color:var(--muted-strong);}
-  .pager .pages button{border:1px solid var(--border);background:var(--card);border-radius:7px;padding:6px 12px;margin-left:4px;cursor:pointer;color:var(--ink);}
-
-  footer{
-    margin-top:28px;padding-top:18px;border-top:1px solid var(--border);
-    display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:400;color:var(--muted-strong);flex-wrap:wrap;gap:10px;
-  }
-  footer .links a{color:var(--accent-dark);text-decoration:none;margin-left:16px;font-weight:500;}
-  footer .links a:hover{text-decoration:underline;}
-  .brand-strip{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--ink);}
-  .uon-badge{padding:4px 10px;border:1px solid var(--border);border-radius:20px;font-size:10.5px;font-weight:500;color:var(--muted-strong);letter-spacing:.3px;}
-
-  .uon-footer{margin-top:40px;}
-  .uon-footer-top{display:flex;justify-content:space-between;align-items:center;padding:18px 0;}
-  .uon-logo-block{display:flex;align-items:center;gap:12px;}
-  .uon-crest{width:52px;height:52px;background:#0e1a35;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .uon-name{font-family:'Inter',sans-serif;font-weight:700;font-size:15px;color:#0e1a35;line-height:1.15;}
-  .uon-tag{font-size:10.5px;color:var(--muted-strong);letter-spacing:.3px;margin-top:3px;font-weight:500;}
-  .uon-links{display:flex;align-items:center;gap:28px;}
-  .uon-links a{display:flex;align-items:center;gap:6px;color:var(--muted-strong);text-decoration:none;font-size:13px;font-weight:500;}
-  .uon-links a:hover{color:var(--ink);}
-  .uon-footer-bottom{border-top:1px solid var(--border);padding:16px 0;text-align:center;font-size:12.5px;color:var(--muted);}
-  .uon-footer-bottom a{color:var(--muted-strong);text-decoration:underline;font-weight:500;}
-
-  .lettuce-logo-img{height:34px;object-fit:contain;}
-  .lettuce-logo-header{height:44px;object-fit:contain;margin-bottom:4px;}
-  .uon-logo-img{height:72px;object-fit:contain;}
-</style>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <title>Lettuce</title>
+  <link href='style.css' rel='stylesheet'>
 </head>
+
 <body>
 
-<div class="app">
-  <aside class="sidebar">
-    <div class="brand">
-<img src="assets/lettuce-logo.png" alt="Lettuce" class="lettuce-logo-img">
-    </div>
-
-    <div class="sidebar-block settings">
-      <h3>Embeddings</h3>
-      <div class="field">
-        <label>Embeddings model</label>
-        <select>
-          <option>BGESMALL</option>
-          <option>BGEBASE</option>
-          <option>MiniLM-L6</option>
-        </select>
-      </div>
-      <div class="toggle-row">
-        <span>Enable embeddings</span>
-        <div class="switch on"></div>
-      </div>
-
-      <h3 style="margin-top:16px;">LLM assistance</h3>
-      <div class="title-row">
-      <div class="subtitle">To use the LLM, you must either have installed one of the llama-cpp extras or have an Ollama server running, and to have enabled embeddings.</div>
-      </div>
-      <div class="field" style="margin-top:14px;">
-        <label>LLM model</label>
-        <select>
-          <option>gemma3n:e4b</option>
-          <option>llama3.1:8b</option>
-        </select>
-      </div>
-      <div class="toggle-row">
-        <span>Enable LLM</span>
-        <div class="switch on"></div>
-      </div>
-
-      
-      <div class="field">
-        <label>Ollama URL</label>
-        <input type="text" value="http://localhost:11434" disabled style="opacity:.5;">
-      </div>
-    </div>
-
-    <div class="block-divider"></div>
-
-    <div class="sidebar-block defaults">
-      <h3>Defaults</h3>
-      <div class="field">
-        <label>Domain</label>
-        <select><option>Drug</option><option>Condition</option><option>Procedure</option></select>
-      </div>
-      <div class="field">
-        <label>Vocabulary</label>
-        <select><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
-      </div>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="main-inner">
-    <div class="topbar">
-      <div class="title-row">
-        <img src="assets/lettuce-logo.png" alt="Lettuce" class="lettuce-logo-header">
-        <div class="subtitle">Concept mapping &middot; Built at the University of Nottingham</div>
-      </div>
-      <div class="header-right">
-        <button class="btn btn-secondary">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
-          Upload source file
-        </button>
-      </div>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-icon-wrap neutral">
-          <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16"/></svg>
-        </div>
-        <div class="stat-text"><div class="stat-value neutral">39</div><div class="stat-label">Total rows</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap ready">
-          <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M20 6L9 17l-5-5"/></svg>
-        </div>
-        <div class="stat-text"><div class="stat-value ready">14</div><div class="stat-label">Ready to review</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap searching">
-          <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
-        </div>
-        <div class="stat-text"><div class="stat-value searching">2</div><div class="stat-label">Searching</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap pending">
-          <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;"><circle cx="12" cy="12" r="3"/></svg>
-        </div>
-        <div class="stat-text"><div class="stat-value pending">23</div><div class="stat-label">Not searched</div></div>
-      </div>
-    </div>
-
-    <div class="search-panel">
-      <div class="search-row">
-        <input class="search-input" type="text" placeholder="Search a term, or upload a source file above...">
-        <select class="pill-select"><option>Text search</option><option>Vector search</option></select>
-        <button class="btn btn-primary">
-          <svg class="icon" viewBox="0 0 24 24" style="stroke:white;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          Search
-        </button>
-      </div>
-
-      <div class="batch-bar">
-        <input type="checkbox">
-        <span class="count">Select rows below, then choose a search method to run it on all of them at once</span>
-        <select style="margin-left:auto;">
-          <option>Batch method: Vector search</option>
-          <option>Batch method: Text search</option>
-        </select>
-        <button class="btn btn-secondary">Set selected to defaults</button>
-        <button class="btn btn-primary">Run batch search (3 selected)</button>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th class="checkbox-col"><input type="checkbox" title="Select all rows on this page for batch actions"></th>
-          <th>Source term</th>
-          <th>Domain</th>
-          <th>Vocabulary</th>
-          <th>Search mode</th>
-          <th>Suggestion status</th>
-          <th>Concept ID</th>
-        </tr>
-      </thead>
-      <tbody id="results-body">
-        <tr>
-          <td class="checkbox-col"><input type="checkbox" checked></td>
-          <td class="term-cell">Memantine HCL</td>
-          <td>
-            
-            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
-          </td>
-          <td>
-            
-            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
-          </td>
-          <td><select class="mode-select"><option>Vector search</option><option>Text search</option></select></td>
-          <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--green);"><path d="M20 6L9 17l-5-5"/></svg> Ready to review</span></td>
-          <td>&mdash;</td>
-        </tr>
-        <tr>
-          <td class="checkbox-col"><input type="checkbox" checked></td>
-          <td class="term-cell">Ppaliperidone (Inv)</td>
-          <td>
-            
-            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
-          </td>
-          <td>
-            
-            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
-          </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
-          <td><span class="status-pill status-pending"><span class="spinner"></span> Searching&hellip;</span></td>
-          <td>&mdash;</td>
-        </tr>
-        <tr>
-          <td class="checkbox-col"><input type="checkbox" checked></td>
-          <td class="term-cell">Trazidine</td>
-          <td>
-            
-            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
-          </td>
-          <td>
-            
-            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
-          </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
-          <td><span class="status-pill status-none">Not searched</span></td>
-          <td>&mdash;</td>
-        </tr>
-        <tr>
-          <td class="checkbox-col"><input type="checkbox"></td>
-          <td class="term-cell">Trazodone HCL</td>
-          <td>
-            
-            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
-          </td>
-          <td>
-            
-            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
-          </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
-          <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--green);"><path d="M20 6L9 17l-5-5"/></svg> Ready to review</span></td>
-          <td>1091648</td>
-        </tr>
-        <tr>
-          <td class="checkbox-col"><input type="checkbox"></td>
-          <td class="term-cell">Amitriptyline HCL</td>
-          <td>
-        
-            <select class="mode-select"><option>Drug</option><option>Condition</option><option>Procedure</option></select>
-          </td>
-          <td>
-            
-            <select class="mode-select"><option>RxNorm</option><option>SNOMED</option><option>ICD-10</option></select>
-          </td>
-          <td><select class="mode-select"><option>Text search</option><option>Vector search</option></select></td>
-          <td><span class="status-pill status-none">Not searched</span></td>
-          <td>&mdash;</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-
-    <div class="pager">
-      <span>39 rows &middot; 9 columns</span>
-      <div class="pages">
-        <button>&lsaquo; Page 1 of 4 &rsaquo;</button>
-      </div>
-    </div>
-
-    <footer>
-      <div class="brand-strip">
-        <span>Lettuce v0.4</span>
-        <span class="uon-badge">UoN &middot; OHDSI</span>
-      </div>
-      <div class="links">
-        <a href="mailto:James.Mitchell-White1@nottingham.ac.uk">Contact us</a>
-        <a href="mailto:James.Mitchell-White1@nottingham.ac.uk?subject=Feedback">Feedback</a>
-        <a href="https://github.com/Health-Informatics-UoN/Carrot" target="_blank" rel="noopener noreferrer">Carrot</a>
-        <a href="https://health-informatics-uon.github.io/lettuce/" target="_blank" rel="noopener noreferrer">Documentation</a>
-      </div>
-    </footer>
-
-    <div class="uon-footer">
-      <div class="uon-footer-top">
-        <div class="uon-logo-block">
-          <img src="assets/uon-logo.png" alt="University of Nottingham" class="uon-logo-img">
-        </div>
-        <div class="uon-links">
-          <a href="#"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg> Privacy Policy</a>
-          <a href="#"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h6M9 12h6M9 16h4"/></svg> Terms and Conditions</a>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="title-row">
+          <img src="assets/lettuce-logo.png" alt="Lettuce" class="lettuce-logo-img">
+          <div class="subtitle" id="concept-mapping-subtitle">Concept mapping &middot; Built at the University of
+            Nottingham &middot; v0.4</div>
         </div>
       </div>
-      <div class="uon-footer-bottom">
-        &copy; 2026 <a href="#">University of Nottingham</a>. All Rights Reserved.
+
+
+      <div class="sidebar-block settings">
+        <h3>Embeddings</h3>
+        <div class="field">
+          <label>Embeddings model</label>
+          <select>
+            <option>BGESMALL</option>
+            <option>BGEBASE</option>
+            <option>MiniLM-L6</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <span>Enable embeddings</span>
+          <div class="switch on"></div>
+        </div>
+
+        <h3 style="margin-top:16px;">LLM assistance</h3>
+        <div class="title-row">
+          <div class="subtitle">To use the LLM, you must either have installed one of the llama-cpp extras or have an
+            Ollama server running, and to have enabled embeddings.</div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>LLM model</label>
+          <select>
+            <option>gemma3n:e4b</option>
+            <option>llama3.1:8b</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <span>Enable LLM</span>
+          <div class="switch on"></div>
+        </div>
+
+
+        <div class="field">
+          <label>Ollama URL</label>
+          <input type="text" value="http://localhost:11434" disabled style="opacity:.5;">
+        </div>
+      </div>
+
+      <div class="block-divider"></div>
+
+      <div class="sidebar-block defaults">
+        <h3>Defaults</h3>
+        <div class="field">
+          <label>Domain</label>
+          <select>
+            <option>Drug</option>
+            <option>Condition</option>
+            <option>Procedure</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Vocabulary</label>
+          <select>
+            <option>RxNorm</option>
+            <option>SNOMED</option>
+            <option>ICD-10</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="topbar">
+
+          <div class="header-right">
+            <button class="btn btn-secondary" id="upload-btn">
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />
+              </svg>
+              Upload source file
+            </button>
+            <button class="btn btn-secondary" id="download-btn">
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M12 4v12M7 11l5 5 5-5M5 20h14" />
+              </svg>
+              Download CSV file
+            </button>
+            <button class="btn btn-secondary" id="save-session-btn">Save session</button>
+            <input type="text" id="session-name-input" class="pill-select" placeholder="Session name…"
+              style="width:160px;">
+            <select id="load-session-select" class="pill-select">
+              <option value="">
+                Load previous session…
+              </option>
+            </select>
+            <button class="btn btn-secondary" id="manage-sessions-btn">Manage sessions</button>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon-wrap neutral">
+              <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;">
+                <rect x="4" y="4" width="16" height="16" rx="2" />
+                <path d="M4 10h16M10 4v16" />
+              </svg>
+            </div>
+            <div class="stat-text">
+              <div class="stat-value neutral">39</div>
+              <div class="stat-label">Total rows</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap ready">
+              <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <div class="stat-text">
+              <div class="stat-value ready">14</div>
+              <div class="stat-label">Ready to review</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap searching">
+              <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;">
+                <path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5" />
+              </svg>
+            </div>
+            <div class="stat-text">
+              <div class="stat-value searching">2</div>
+              <div class="stat-label">Searching</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap pending">
+              <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;">
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <div class="stat-text">
+              <div class="stat-value pending">23</div>
+              <div class="stat-label">Not searched</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-panel">
+          <div class="search-row">
+            <input class="search-input" type="text" placeholder="Search a term, or upload a source file above...">
+            <select class="pill-select">
+              <option>Text search</option>
+              <option>Vector search</option>
+              <option>LLM search</option>
+            </select>
+            <button class="btn btn-primary">
+              <svg class="icon" viewBox="0 0 24 24" style="stroke:white;">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" />
+              </svg>
+              Search
+            </button>
+          </div>
+
+          <div class="batch-bar">
+            <input type="checkbox" id="select-all-top">
+            <span class="count">Select rows below, then choose a search method to run it on all of them at once</span>
+            <select style="margin-left:auto;">
+              <option>Batch method: Text search</option>
+              <option>Batch method: Vector search</option>
+              <option>Batch method: LLM search</option>
+            </select>
+            <button class="btn btn-secondary">Set selected to defaults</button>
+            <button class="btn btn-primary" id="run-batch-btn">Run batch search (3 selected)</button>
+          </div>
+        </div>
+
+        <div class="table-wrap" id="table-wrap">
+          <button class="btn btn-secondary" id="exit-fullscreen-btn">✕ Exit fullscreen</button>
+          <table>
+            <thead>
+              <tr>
+                <th class="checkbox-col"><input type="checkbox" id="select-all-header"
+                    title="Select all rows on this page for batch actions"></th>
+                <th>Source term</th>
+                <th>Domain</th>
+                <th>Vocabulary</th>
+                <th>Search mode</th>
+                <th>Suggestion status</th>
+                <th>Concept ID</th>
+              </tr>
+            </thead>
+            <tbody id="results-body">
+              <tr>
+                <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
+                <td class="term-cell">Memantine HCL</td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>Drug</option>
+                    <option>Condition</option>
+                    <option>Procedure</option>
+                  </select>
+                </td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>RxNorm</option>
+                    <option>SNOMED</option>
+                    <option>ICD-10</option>
+                  </select>
+                </td>
+                <td><select class="mode-select">
+                    <option>Text search</option>
+                    <option>Vector search</option>
+                    <option>LLM search</option>
+                  </select></td>
+                <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24"
+                      style="width:11px;height:11px;stroke:var(--green);">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg> Ready to review</span></td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
+                <td class="term-cell">Ppaliperidone (Inv)</td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>Drug</option>
+                    <option>Condition</option>
+                    <option>Procedure</option>
+                  </select>
+                </td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>RxNorm</option>
+                    <option>SNOMED</option>
+                    <option>ICD-10</option>
+                  </select>
+                </td>
+                <td><select class="mode-select">
+                    <option>Text search</option>
+                    <option>Vector search</option>
+                    <option>LLM search</option>
+                  </select></td>
+                <td><span class="status-pill status-pending"><span class="spinner"></span> Searching&hellip;</span></td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
+                <td class="term-cell">Trazidine</td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>Drug</option>
+                    <option>Condition</option>
+                    <option>Procedure</option>
+                  </select>
+                </td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>RxNorm</option>
+                    <option>SNOMED</option>
+                    <option>ICD-10</option>
+                  </select>
+                </td>
+                <td><select class="mode-select">
+                    <option>Text search</option>
+                    <option>Vector search</option>
+                    <option>LLM search</option>
+                  </select></td>
+                <td><span class="status-pill status-none">Not searched</span></td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
+                <td class="term-cell">Trazodone HCL</td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>Drug</option>
+                    <option>Condition</option>
+                    <option>Procedure</option>
+                  </select>
+                </td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>RxNorm</option>
+                    <option>SNOMED</option>
+                    <option>ICD-10</option>
+                  </select>
+                </td>
+                <td><select class="mode-select">
+                    <option>Text search</option>
+                    <option>Vector search</option>
+                    <option>LLM search</option>
+                  </select></td>
+                <td><span class="status-pill status-ready"><svg class="icon" viewBox="0 0 24 24"
+                      style="width:11px;height:11px;stroke:var(--green);">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg> Ready to review</span></td>
+                <td>1091648</td>
+              </tr>
+              <tr>
+                <td class="checkbox-col"><input type="checkbox" class="row-checkbox" checked></td>
+                <td class="term-cell">Amitriptyline HCL</td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>Drug</option>
+                    <option>Condition</option>
+                    <option>Procedure</option>
+                  </select>
+                </td>
+                <td>
+
+                  <select class="mode-select">
+                    <option>RxNorm</option>
+                    <option>SNOMED</option>
+                    <option>ICD-10</option>
+                  </select>
+                </td>
+                <td><select class="mode-select">
+                    <option>Text search</option>
+                    <option>Vector search</option>
+                    <option>LLM search</option>
+                  </select></td>
+                <td><span class="status-pill status-none">Not searched</span></td>
+                <td>&mdash;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pager">
+          <span id="pager-info">40 rows · 7 columns</span>
+          <div class="pages">
+            <button class="btn btn-secondary" id="prev-page-btn">&lsaquo; Prev</button>
+            <span id="page-indicator">Page 1 of 1</span>
+            <button class="btn btn-secondary" id="next-page-btn">Next &rsaquo;</button>
+            <button class="btn btn-secondary" id="expand-toggle">⛶ Expand</button>
+          </div>
+        </div>
+
+        <footer>
+
+          <div class="uon-footer">
+            <div class="uon-footer-top">
+              <div class="uon-logo-block">
+                <a href="https://www.nottingham.ac.uk/" target="_blank">
+                  <img src="assets/uon-transparent-logo.png" alt="University of Nottingham" class="uon-logo-img">
+                </a>
+              </div>
+
+              <div class="links">
+                <a href="mailto:James.Mitchell-White1@nottingham.ac.uk">Contact us</a>
+                <a href="mailto:James.Mitchell-White1@nottingham.ac.uk?subject=Feedback">Feedback</a>
+                <a href="https://github.com/Health-Informatics-UoN/Carrot" target="_blank"
+                  rel="noopener noreferrer">Carrot</a>
+                <a href="https://health-informatics-uon.github.io/lettuce/" target="_blank"
+                  rel="noopener noreferrer">Documentation</a>
+              </div>
+            </div>
+            <div class="uon-footer-bottom">
+              <span class="copyright">
+                &copy; 2026 <a href="https://www.nottingham.ac.uk/" target="_blank"> University of Nottingham</a>. All
+                Rights Reserved.</span>
+              <div class="uon-links">
+                <a href="https://www.nottingham.ac.uk/utilities/privacy/privacy.aspx" target="_blank"><svg class="icon"
+                    viewBox="0 0 24 24" style="width:15px;height:15px;">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 16v-4M12 8h.01" />
+                  </svg> Privacy Policy</a>
+                <a href="https://www.nottingham.ac.uk/utilities/terms.aspx" target="_blank"><svg class="icon"
+                    viewBox="0 0 24 24" style="width:15px;height:15px;">
+                    <rect x="5" y="3" width="14" height="18" rx="1" />
+                    <path d="M9 8h6M9 12h6M9 16h4" />
+                  </svg> Terms and Conditions</a>
+              </div>
+            </div>
+          </div>
+
+        </footer>
+      </div>
+    </main>
+  </div>
+  
+  <div class="modal-overlay" id="sessions-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Manage sessions</h3>
+      <button class="modal-close" id="sessions-modal-close">&times;</button>
+    </div>
+    <div class="modal-body" id="sessions-list-view">
+      <ul class="session-list" id="session-list"></ul>
+    </div>
+    <div class="modal-body" id="sessions-confirm-view" style="display:none;">
+      <p id="confirm-delete-text"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="confirm-delete-no">No</button>
+        <button class="btn btn-primary" id="confirm-delete-yes" style="background:#c0392b;border-color:#c0392b;">Yes, delete</button>
       </div>
     </div>
-    </div>
-  </main>
+  </div>
 </div>
 
-<<script>
-  // --- Real API wiring ---
-  const searchButton = document.querySelector('.btn-primary');
-  const searchInput = document.querySelector('.search-input');
-  const tableBody = document.getElementById('results-body');
+  <script>
+    const searchButton = document.querySelector('.btn-primary');
+    const searchInput = document.querySelector('.search-input');
+    const tableBody = document.getElementById('results-body');
+    const uploadBtn = document.getElementById('upload-btn');
+    const downloadBtn = document.getElementById('download-btn')
+    const saveSessionBtn = document.getElementById('save-session-btn');
+    const loadSessionSelect = document.getElementById('load-session-select');
 
-  // "Upload source file" button
-  const uploadButton = document.querySelector('.btn-secondary');
+    const PAGE_SIZE = 10;
+    let allRows = [];   // [{term, domain, vocab, searchMode, status, conceptId, checked}]
+    let currentPage = 1;
 
-  // Search button
-  searchButton.addEventListener('click', async () => {
-    const term = searchInput.value.trim();
-    if (!term) return;
+    const domainOpts = ['Drug', 'Condition', 'Procedure'];
+    const vocabOpts = ['RxNorm', 'SNOMED', 'ICD-10'];
+    const selOptions = (opts, val) => opts.map(o =>
+      `<option${o.toLowerCase() === String(val).toLowerCase() ? ' selected' : ''}>${o}</option>`).join('');
 
-    try {
-      const response = await window.lettuceAPI.searchText(term);
-
-      console.log('Raw API response:', response);
-
-      renderResults(response.items);
-    } catch (err) {
-      console.error('Search failed:', err);
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
-  });
 
-  // Upload CSV button
-  uploadButton.addEventListener('click', async () => {
-    try {
-      const csvText = await window.lettuceAPI.uploadCsv();
+    function statusPillHtml(status) {
+      if (status === 'ready') return `<span class="status-pill status-ready">Ready to review</span>`;
+      if (status === 'searching') return `<span class="status-pill status-pending"><span class="spinner"></span> Searching&hellip;</span>`;
+      return `<span class="status-pill status-none">Not searched</span>`;
+    }
 
-      if (!csvText) {
-        return; // User cancelled
+    function renderRowHtml(row, idx) {
+      return `<tr data-row-idx="${idx}">
+      <td class="checkbox-col"><input type="checkbox" class="row-checkbox" ${row.checked ? 'checked' : ''}></td>
+      <td class="term-cell">${escapeHtml(row.term)}</td>
+      <td><select class="mode-select" data-field="domain">${selOptions(domainOpts, row.domain)}</select></td>
+      <td><select class="mode-select" data-field="vocab">${selOptions(vocabOpts, row.vocab)}</select></td>
+      <td><select class="mode-select" data-field="searchMode">${selOptions(['Text search', 'Vector search', 'LLM search'], row.searchMode)}</select></td>
+      <td>${statusPillHtml(row.status)}</td>
+      <td>${row.conceptId ?? '&mdash;'}</td>
+    </tr>`;
+    }
+
+    function renderPage(page) {
+      const totalPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
+      currentPage = Math.min(Math.max(1, page), totalPages);
+      const start = (currentPage - 1) * PAGE_SIZE;
+      tableBody.innerHTML = allRows.slice(start, start + PAGE_SIZE)
+        .map((r, i) => renderRowHtml(r, start + i)).join('');
+
+      const pageIndicator = document.getElementById('page-indicator');
+      if (pageIndicator) pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+      const prevBtn = document.getElementById('prev-page-btn');
+      const nextBtn = document.getElementById('next-page-btn');
+      if (prevBtn) prevBtn.disabled = currentPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+      updateStats();
+      syncSelectAllState();
+      updateBatchButton();
+    }
+
+    // Delegated: keeps allRows in sync with whatever the user edits on screen
+    tableBody.addEventListener('change', (e) => {
+      const tr = e.target.closest('tr[data-row-idx]');
+      if (!tr) return;
+      const idx = Number(tr.dataset.rowIdx);
+      if (e.target.classList.contains('row-checkbox')) {
+        allRows[idx].checked = e.target.checked;
+      } else if (e.target.classList.contains('mode-select')) {
+        allRows[idx][e.target.dataset.field] = e.target.value;
       }
-
-      console.log('Raw CSV text:', csvText);
-
-      // You can parse the CSV here later
-      // e.g. parseCsv(csvText);
-
-    } catch (err) {
-      console.error('CSV upload failed:', err);
-    }
-  });
-
-  function renderResults(items) {
-    tableBody.innerHTML = '';
-
-    items.forEach((item) => {
-      const row = document.createElement('tr');
-
-      row.innerHTML = `
-        <td class="checkbox-col"><input type="checkbox"></td>
-        <td class="term-cell">${item.conceptName}</td>
-        <td class="tag-cell">${item.domain ?? '—'}</td>
-        <td class="tag-cell">${item.vocabulary ?? '—'}</td>
-        <td>Text search</td>
-        <td><span class="status-pill status-ready">Ready to review</span></td>
-        <td>${item.conceptId ?? '—'}</td>
-      `;
-
-      tableBody.appendChild(row);
     });
-  }
-</script>
 
+    function updateStats() {
+      const total = allRows.length;
+      const ready = allRows.filter(r => r.status === 'ready').length;
+      const searching = allRows.filter(r => r.status === 'searching').length;
+      const none = allRows.filter(r => !r.status || r.status === 'none').length;
+      const set = (cls, n) => { const el = document.querySelector(`.stat-value.${cls}`); if (el) el.textContent = n; };
+      set('neutral', total); set('ready', ready); set('searching', searching); set('pending', none);
+      const info = document.getElementById('pager-info');
+      if (info) info.textContent = `${total} rows · 7 columns`;
+    }
+
+    function looksLikeHeaderRow(row) {
+      const termNames = ['source_term', 'source term', 'sourceterm', 'term', 'name', 'concept_name', 'source', 'source_name'];
+      const lower = row.map(h => h.trim().toLowerCase());
+      if (termNames.some(n => lower.includes(n))) return true;
+      if (row.some(c => /term|name|domain|vocab/i.test(c))) return true;
+      if (row.some(c => /^[a-z0-9]+(_[a-z0-9]+)+$/i.test(c.trim()))) return true;
+      return false;
+    }
+    function findCol(header, names) {
+      const lower = header.map(h => h.trim().toLowerCase());
+      for (const n of names) { const i = lower.indexOf(n); if (i !== -1) return i; }
+      return -1;
+    }
+    function parseCsv(text) {
+      text = text.replace(/^\uFEFF/, '');
+      const rows = []; let row = [], field = '', inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQuotes) {
+          if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+          else field += c;
+        } else if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else if (c !== '\r') field += c;
+      }
+      if (field !== '' || row.length) { row.push(field); rows.push(row); }
+      return rows.filter(r => r.some(cell => cell.trim() !== ''));
+    }
+
+    function populateSourceRows(rows) {
+      const termNames = ['source_term', 'source term', 'sourceterm', 'term', 'name', 'concept_name', 'source', 'source_name'];
+      const hasHeader = looksLikeHeaderRow(rows[0]);
+      let termIdx = 0, domainIdx = -1, vocabIdx = -1, dataRows = rows;
+      if (hasHeader) {
+        const header = rows[0];
+        termIdx = Math.max(0, findCol(header, termNames));
+        domainIdx = findCol(header, ['domain', 'domain_id']);
+        vocabIdx = findCol(header, ['vocabulary', 'vocabulary_id', 'vocab']);
+        dataRows = rows.slice(1);
+      }
+      allRows = dataRows.map(r => {
+        const term = (r[termIdx] ?? '').trim();
+        if (!term) return null;
+        return {
+          term,
+          domain: domainIdx > -1 ? r[domainIdx] : 'Drug',
+          vocab: vocabIdx > -1 ? r[vocabIdx] : 'RxNorm',
+          searchMode: 'Text search',
+          status: 'none',
+          conceptId: null,
+          checked: false,
+        };
+      }).filter(Boolean);
+      renderPage(1);
+    }
+
+    function renderResults(items) {
+      allRows = items.map(item => ({
+        term: item.conceptName ?? '',
+        domain: item.domain ?? 'Drug',
+        vocab: item.vocabulary ?? 'RxNorm',
+        searchMode: 'Text search',
+        status: 'ready',
+        conceptId: item.conceptId ?? null,
+        checked: false,
+      }));
+      renderPage(1);
+    }
+
+    searchButton.addEventListener('click', async () => {
+      const term = searchInput.value.trim();
+      if (!term) return;
+      try {
+        const response = await window.lettuceAPI.searchText(term);
+        console.log('Raw API response:', response);
+        renderResults(response.items);
+      } catch (err) {
+        console.error('Search failed:', err);
+      }
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      try {
+        const csvText = await window.lettuceAPI.uploadCsv();
+        if (!csvText) return;
+        const rows = parseCsv(csvText);
+        if (rows.length === 0) return;
+        populateSourceRows(rows);
+      } catch (err) {
+        console.error('CSV upload failed:', err);
+      }
+    });
+    downloadBtn.addEventListener('click', async () => {
+      try {
+        tableToCSV();
+      } catch (err) {
+        console.error('CSV download failed:', err);
+      }
+    })
+
+    function tableToCSV() {
+
+      // Variable to store the final csv data
+      let csv_data = [];
+
+      // Get each row data
+      let rows = document.getElementsByTagName('tr');
+      for (let i = 0; i < rows.length; i++) {
+
+        // Get each column data
+        let cols = rows[i].querySelectorAll('td, th');
+        // Stores each csv row data
+        let csvrow = [];
+        indexOfRelevantCols = [1, 2, 3, 6]
+        for (let j = 0; j < indexOfRelevantCols.length; j++) {
+
+          // Get the text data of each cell of
+          // a row and push it to csvrow
+          if (i === 0) {
+            csvrow.push(cols[indexOfRelevantCols[j]].innerHTML);
+          } else {
+            csvrow.push(cols[indexOfRelevantCols[j]].innerHTML);
+
+          }
+        }
+
+        // Combine each column value with comma
+        csv_data.push(csvrow.join(","));
+      }
+      // Combine each row data with new line character
+      csv_data = csv_data.join('\n');
+      // Call this function to download csv file  
+      downloadCSVFile(csv_data);
+    }
+    function downloadCSVFile(csv_data) {
+
+      // Create CSV file object and feed our
+      // csv_data into it
+      CSVFile = new Blob([csv_data], { type: "text/csv" });
+
+      // Create to temporary link to initiate
+      // download process
+      let temp_link = document.createElement('a');
+
+      // Download csv file
+      temp_link.download = `${loadSessionSelect.value.replace(/^\d+-/, '')}.csv`;
+      let url = window.URL.createObjectURL(CSVFile);
+      temp_link.href = url;
+
+      // This link should not be displayed
+      temp_link.style.display = "none";
+      document.body.appendChild(temp_link);
+
+      // Automatically click the link to trigger download 
+      temp_link.click();
+      document.body.removeChild(temp_link);
+    }
+    // --- Save / load sessions ---
+    const sessionNameInput = document.getElementById('session-name-input');
+
+    saveSessionBtn.addEventListener('click', async () => {
+      if (allRows.length === 0) return;
+      const name = sessionNameInput.value.trim() || `Session ${new Date().toLocaleString()}`;
+      try {
+        await window.lettuceAPI.saveProject(name, allRows);
+        sessionNameInput.value = '';
+        await refreshSessionList();
+        console.log('Session saved successfully:', name);
+      } catch (err) {
+        console.error('Save session failed:', err);
+      }
+    });
+
+    sessionNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveSessionBtn.click();
+    });
+
+    async function refreshSessionList() {
+      const projects = await window.lettuceAPI.listProjects();
+      loadSessionSelect.innerHTML = '<option value="">Load previous session…</option>' +
+        projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.rowCount} rows)</option>`).join('');
+    }
+
+    loadSessionSelect.addEventListener('change', async () => {
+      const id = loadSessionSelect.value;
+      if (!id) return;
+      try {
+        const project = await window.lettuceAPI.loadProject(id);
+        if (!project) return;
+        allRows = project.rows;
+        renderPage(1);
+      } catch (err) {
+        console.error('Load session failed:', err);
+      }
+    });
+  </script>
+
+  <script>
+    const selectAllTop = document.getElementById('select-all-top');
+    const selectAllHeader = document.getElementById('select-all-header');
+    const runBatchBtn = document.getElementById('run-batch-btn');
+    const resultsBody = document.getElementById('results-body');
+
+    function updateBatchButton() {
+      const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+      runBatchBtn.textContent = `Run batch search (${checkedCount} selected)`;
+    }
+
+    function setAllRows(checked) {
+      document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = checked);
+      updateBatchButton();
+    }
+
+    function syncSelectAllState() {
+      const total = document.querySelectorAll('.row-checkbox').length;
+      const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+      const allChecked = checkedCount === total && total > 0;
+      const noneChecked = checkedCount === 0;
+
+      [selectAllTop, selectAllHeader].forEach(cb => {
+        cb.checked = allChecked;
+        cb.indeterminate = !allChecked && !noneChecked;
+      });
+    }
+
+    // Either "select all" checkbox drives all rows, and stays in sync with the other
+    [selectAllTop, selectAllHeader].forEach(masterCb => {
+      masterCb.addEventListener('change', () => {
+        setAllRows(masterCb.checked);
+        [selectAllTop, selectAllHeader].forEach(cb => {
+          cb.checked = masterCb.checked;
+          cb.indeterminate = false;
+        });
+      });
+    });
+
+    // Delegated listener: catches row checkboxes that exist now AND any added later
+    // (e.g. after a CSV upload or search replaces #results-body's contents)
+    resultsBody.addEventListener('change', (e) => {
+      if (e.target.classList.contains('row-checkbox')) {
+        updateBatchButton();
+        syncSelectAllState();
+      }
+    });
+
+    // Set correct initial state on page load (since some rows start checked)
+    syncSelectAllState();
+    updateBatchButton();
+
+    const expandToggle = document.getElementById('expand-toggle');
+    const tableWrap = document.getElementById('table-wrap');
+
+    expandToggle.addEventListener('click', () => {
+      tableWrap.classList.toggle('expanded');
+      expandToggle.textContent = tableWrap.classList.contains('expanded')
+        ? '⛶ Collapse'
+        : '⛶ Expand';
+    });
+
+    // Let Escape key exit expanded view too
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && tableWrap.classList.contains('expanded')) {
+        tableWrap.classList.remove('expanded');
+        expandToggle.textContent = '⛶ Expand';
+      }
+    });
+
+    const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
+    exitFullscreenBtn.addEventListener('click', () => {
+      tableWrap.classList.remove('expanded');
+      expandToggle.textContent = '⛶ Expand';
+    });
+
+    const prevPageBtn = document.getElementById('prev-page-btn');
+    const nextPageBtn = document.getElementById('next-page-btn');
+
+    prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
+    nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
+
+
+        const manageSessionsBtn = document.getElementById('manage-sessions-btn');
+    const sessionsModalOverlay = document.getElementById('sessions-modal-overlay');
+    const sessionsModalClose = document.getElementById('sessions-modal-close');
+    const sessionListEl = document.getElementById('session-list');
+    const sessionsListView = document.getElementById('sessions-list-view');
+    const sessionsConfirmView = document.getElementById('sessions-confirm-view');
+    const confirmDeleteText = document.getElementById('confirm-delete-text');
+    const confirmDeleteYes = document.getElementById('confirm-delete-yes');
+    const confirmDeleteNo = document.getElementById('confirm-delete-no');
+
+    let pendingDeleteId = null;
+
+    async function renderSessionListModal() {
+      const projects = await window.lettuceAPI.listProjects();
+      sessionListEl.innerHTML = projects.length === 0
+        ? '<li class="session-list-empty">No saved sessions yet.</li>'
+        : projects.map(p => `
+          <li class="session-list-item" data-id="${p.id}">
+            <span class="session-list-name">${escapeHtml(p.name)} <span class="session-list-meta">(${p.rowCount} rows)</span></span>
+            <button class="session-delete-btn" data-id="${p.id}" data-name="${escapeHtml(p.name)}" title="Delete session">&times;</button>
+          </li>`).join('');
+    }
+
+    async function openSessionsModal() {
+      await renderSessionListModal();
+      sessionsListView.style.display = '';
+      sessionsConfirmView.style.display = 'none';
+      sessionsModalOverlay.classList.add('open');
+    }
+
+    function closeSessionsModal() {
+      sessionsModalOverlay.classList.remove('open');
+      pendingDeleteId = null;
+    }
+
+    manageSessionsBtn.addEventListener('click', openSessionsModal);
+    sessionsModalClose.addEventListener('click', closeSessionsModal);
+    sessionsModalOverlay.addEventListener('click', (e) => {
+      if (e.target === sessionsModalOverlay) closeSessionsModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sessionsModalOverlay.classList.contains('open')) closeSessionsModal();
+    });
+
+    sessionListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.session-delete-btn');
+      if (!btn) return;
+      pendingDeleteId = btn.dataset.id;
+      confirmDeleteText.textContent = `Do you want to delete "${btn.dataset.name}"?`;
+      sessionsListView.style.display = 'none';
+      sessionsConfirmView.style.display = '';
+    });
+
+    confirmDeleteNo.addEventListener('click', () => {
+      pendingDeleteId = null;
+      sessionsConfirmView.style.display = 'none';
+      sessionsListView.style.display = '';
+    });
+
+    confirmDeleteYes.addEventListener('click', async () => {
+      if (!pendingDeleteId) return;
+      try {
+        if (loadSessionSelect.value === pendingDeleteId) loadSessionSelect.value = '';
+        await window.lettuceAPI.deleteProject(pendingDeleteId);
+      } catch (err) {
+        console.error('Delete session failed:', err);
+      }
+      pendingDeleteId = null;
+      await renderSessionListModal();
+      await refreshSessionList();
+      sessionsConfirmView.style.display = 'none';
+      sessionsListView.style.display = '';
+    });
+
+    renderPage(1);
+    refreshSessionList(); 
+  </script>
 </body>
+
 </html>
